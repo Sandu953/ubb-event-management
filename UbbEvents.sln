@@ -1,0 +1,27 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "backend", "backend", "{0F63BAD4-2E90-4E53-AFBB-61D304D623A9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UbbEvents.Api", "backend\UbbEvents.Api\UbbEvents.Api.csproj", "{8B33CDA2-CA0A-44CE-8ED6-10563E091E85}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8B33CDA2-CA0A-44CE-8ED6-10563E091E85}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8B33CDA2-CA0A-44CE-8ED6-10563E091E85}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8B33CDA2-CA0A-44CE-8ED6-10563E091E85}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8B33CDA2-CA0A-44CE-8ED6-10563E091E85}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{8B33CDA2-CA0A-44CE-8ED6-10563E091E85} = {0F63BAD4-2E90-4E53-AFBB-61D304D623A9}
+	EndGlobalSection
+EndGlobal

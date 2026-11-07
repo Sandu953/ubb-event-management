@@ -1,0 +1,25 @@
+# .NET
+**/bin/
+**/obj/
+.vs/
+*.user
+
+# React / Node
+**/node_modules/
+**/dist/
+**/coverage/
+
+# Secrets / local environment
+.env
+.env.*
+!.env.example
+**/.env.local
+**/appsettings.Local.json
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
