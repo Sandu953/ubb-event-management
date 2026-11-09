@@ -1,0 +1,29 @@
+name: Backend
+on:
+  push:
+    branches: [main, 'feature/**']
+    paths: ['backend/**', 'UbbEvents.sln', '.github/workflows/backend.yml', '.config/dotnet-tools.json']
+  pull_request:
+    paths: ['backend/**', 'UbbEvents.sln', '.github/workflows/backend.yml', '.config/dotnet-tools.json']
+permissions:
+  contents: read
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - run: dotnet tool restore
+      - run: dotnet restore UbbEvents.sln
+      - run: dotnet build UbbEvents.sln --configuration Release --no-restore
+      - run: dotnet ef migrations has-pending-model-changes --project backend/UbbEvents.Api --startup-project backend/UbbEvents.Api --configuration Release --no-build
+      # Hosted Linux runners provide Docker. Testcontainers owns its PostgreSQL server and random credentials.
+      - run: dotnet test UbbEvents.sln --configuration Release --no-build --logger trx --results-directory TestResults
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-test-results
+          path: TestResults/*.trx
