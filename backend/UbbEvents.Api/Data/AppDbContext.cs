@@ -15,6 +15,7 @@ public class AppDbContext : DbContext
     public DbSet<Event> Events => Set<Event>();
     public DbSet<Registration> Registrations
         => Set<Registration>();
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -22,6 +23,7 @@ public class AppDbContext : DbContext
         {
             b.HasIndex(x => x.Email).IsUnique();
             b.Property(x => x.GlobalRole).HasConversion<string>();
+            b.ToTable(t => t.HasCheckConstraint("CK_Users_GlobalRole", "\"GlobalRole\" IN ('ADMIN', 'STUDENT')"));
         });
 
         modelBuilder.Entity<Organization>(b =>
@@ -33,6 +35,7 @@ public class AppDbContext : DbContext
         {
             b.HasKey(x => new { x.UserId, x.OrganizationId });
             b.Property(x => x.OrgRole).HasConversion<string>();
+            b.ToTable(t => t.HasCheckConstraint("CK_OrganizationMembers_Role", "\"OrgRole\" IN ('ORG_ADMIN', 'ORGANIZER')"));
 
             b.HasOne<User>().WithMany()
                 .HasForeignKey(x => x.UserId);
@@ -45,6 +48,7 @@ public class AppDbContext : DbContext
         {
             b.Property(x => x.Status).HasConversion<string>();
             b.Property(x => x.Version).IsConcurrencyToken();
+            b.HasIndex(x => new { x.Status, x.StartTime });
 
             b.HasOne<Organization>().WithMany()
                 .HasForeignKey(x => x.OrganizationId)
@@ -56,6 +60,7 @@ public class AppDbContext : DbContext
 
             b.ToTable(t =>
             {
+                t.HasCheckConstraint("CK_Events_Status", "\"Status\" IN ('DRAFT', 'PUBLISHED', 'REGISTRATION_OPEN', 'COMPLETED', 'CANCELLED')");
                 t.HasCheckConstraint(
                     "CK_Events_Time",
                     "\"EndTime\" > \"StartTime\""
@@ -74,6 +79,13 @@ public class AppDbContext : DbContext
                 .IsUnique();
 
             b.Property(x => x.Status).HasConversion<string>();
+            b.Property(x => x.CheckedIn).HasDefaultValue(false);
+            b.HasIndex(x => new { x.EventId, x.Status, x.RegisteredAt, x.Id });
+            b.ToTable(t =>
+            {
+                t.HasCheckConstraint("CK_Registrations_Status", "\"Status\" IN ('CONFIRMED', 'WAITLISTED', 'CANCELED')");
+                t.HasCheckConstraint("CK_Registrations_CheckIn", "NOT \"CheckedIn\" OR \"Status\" = 'CONFIRMED'");
+            });
 
             b.HasOne<Event>().WithMany()
                 .HasForeignKey(x => x.EventId)
@@ -82,6 +94,16 @@ public class AppDbContext : DbContext
             b.HasOne<User>().WithMany()
                 .HasForeignKey(x => x.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<AuditLog>(b =>
+        {
+            b.Property(x => x.EntityType).HasMaxLength(100);
+            b.Property(x => x.Action).HasMaxLength(100);
+            b.HasIndex(x => new { x.OrganizationId, x.OccurredAt });
+            b.HasIndex(x => new { x.EntityType, x.EntityId, x.OccurredAt });
+            b.HasOne<User>().WithMany().HasForeignKey(x => x.ActorUserId).OnDelete(DeleteBehavior.Restrict);
+            b.HasOne<Organization>().WithMany().HasForeignKey(x => x.OrganizationId).OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

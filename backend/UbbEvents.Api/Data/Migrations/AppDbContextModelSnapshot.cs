@@ -22,6 +22,48 @@ namespace UbbEvents.Api.Data.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("UbbEvents.Api.Models.AuditLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<Guid>("ActorUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Details")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("EntityId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("EntityType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("OccurredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActorUserId");
+
+                    b.HasIndex("OrganizationId", "OccurredAt");
+
+                    b.HasIndex("EntityType", "EntityId", "OccurredAt");
+
+                    b.ToTable("AuditLogs");
+                });
+
             modelBuilder.Entity("UbbEvents.Api.Models.Event", b =>
                 {
                     b.Property<Guid>("Id")
@@ -73,9 +115,13 @@ namespace UbbEvents.Api.Data.Migrations
 
                     b.HasIndex("OrganizationId");
 
+                    b.HasIndex("Status", "StartTime");
+
                     b.ToTable("Events", t =>
                         {
                             t.HasCheckConstraint("CK_Events_Capacity", "\"MaxCapacity\" > 0");
+
+                            t.HasCheckConstraint("CK_Events_Status", "\"Status\" IN ('DRAFT', 'PUBLISHED', 'REGISTRATION_OPEN', 'COMPLETED', 'CANCELLED')");
 
                             t.HasCheckConstraint("CK_Events_Time", "\"EndTime\" > \"StartTime\"");
                         });
@@ -122,7 +168,10 @@ namespace UbbEvents.Api.Data.Migrations
 
                     b.HasIndex("OrganizationId");
 
-                    b.ToTable("OrganizationMembers");
+                    b.ToTable("OrganizationMembers", t =>
+                        {
+                            t.HasCheckConstraint("CK_OrganizationMembers_Role", "\"OrgRole\" IN ('ORG_ADMIN', 'ORGANIZER')");
+                        });
                 });
 
             modelBuilder.Entity("UbbEvents.Api.Models.Registration", b =>
@@ -132,7 +181,9 @@ namespace UbbEvents.Api.Data.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<bool>("CheckedIn")
-                        .HasColumnType("boolean");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
 
                     b.Property<Guid>("EventId")
                         .HasColumnType("uuid");
@@ -154,7 +205,14 @@ namespace UbbEvents.Api.Data.Migrations
                     b.HasIndex("EventId", "UserId")
                         .IsUnique();
 
-                    b.ToTable("Registrations");
+                    b.HasIndex("EventId", "Status", "RegisteredAt", "Id");
+
+                    b.ToTable("Registrations", t =>
+                        {
+                            t.HasCheckConstraint("CK_Registrations_CheckIn", "NOT \"CheckedIn\" OR \"Status\" = 'CONFIRMED'");
+
+                            t.HasCheckConstraint("CK_Registrations_Status", "\"Status\" IN ('CONFIRMED', 'WAITLISTED', 'CANCELED')");
+                        });
                 });
 
             modelBuilder.Entity("UbbEvents.Api.Models.User", b =>
@@ -190,7 +248,24 @@ namespace UbbEvents.Api.Data.Migrations
                     b.HasIndex("Email")
                         .IsUnique();
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", t =>
+                        {
+                            t.HasCheckConstraint("CK_Users_GlobalRole", "\"GlobalRole\" IN ('ADMIN', 'STUDENT')");
+                        });
+                });
+
+            modelBuilder.Entity("UbbEvents.Api.Models.AuditLog", b =>
+                {
+                    b.HasOne("UbbEvents.Api.Models.User", null)
+                        .WithMany()
+                        .HasForeignKey("ActorUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("UbbEvents.Api.Models.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("UbbEvents.Api.Models.Event", b =>

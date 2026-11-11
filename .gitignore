@@ -23,3 +23,7 @@
 # OS
 .DS_Store
 Thumbs.db
+
+# Automated test artifacts
+TestResults/
+**/TestResults/

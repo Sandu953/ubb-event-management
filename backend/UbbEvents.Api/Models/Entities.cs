@@ -57,7 +57,7 @@ public class Event
     public DateTime EndTime { get; set; }
     public int MaxCapacity { get; set; }
     public EventStatus Status { get; set; } = EventStatus.DRAFT;
-    public int Version { get; set; }
+    public int Version { get; set; } = 1;
     public Guid CreatedBy { get; set; }
 }
 
