@@ -48,10 +48,20 @@ jobs:
         run: dotnet ef migrations has-pending-model-changes --project backend/UbbEvents.Api --startup-project backend/UbbEvents.Api --configuration Release --no-build
 
       # Testcontainers manages its own PostgreSQL instance.
-      - run: dotnet test UbbEvents.sln --configuration Release --no-build --logger trx --results-directory TestResults
+      - name: Run backend tests
+        run: |
+          dotnet test UbbEvents.sln \
+          --configuration Release \
+          --no-build \
+          --logger "console;verbosity=detailed" \
+          --logger "trx" \
+          --logger "html" \
+          --results-directory TestResults
 
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: backend-test-results
-          path: TestResults/*.trx
+          path: |
+            TestResults/*.trx
+            TestResults/*.html

@@ -35,7 +35,7 @@ dotnet ef database update --project backend/UbbEvents.Api --startup-project back
 dotnet run --project backend/UbbEvents.Api --launch-profile http
 ```
 
-The checked-in HTTP profile uses **http://localhost:5088**; Swagger is at **http://localhost:5088/swagger** in Development. `/api/health` retains the existing liveness response `{ "status": "ok" }`; it is not a database readiness check. The frontend's existing fallback is port 5000: set `VITE_API_URL=http://localhost:5088` in its untracked local environment, or run the API with `--no-launch-profile --urls http://localhost:5000` and `ASPNETCORE_ENVIRONMENT=Development`. Frontend source and Compose services are unchanged.
+The checked-in HTTP profile uses **http://localhost:5088**; Swagger is at **http://localhost:5088/swagger** in Development. `/api/health` retains the existing liveness response `{ "status": "ok" }`; it is not a database readiness check. The frontend's current API fallback and `.env.example` also use port 5088. If you run the API on another port, set `VITE_API_URL` in the frontend's untracked `.env.local` to match and restart Vite or rebuild the frontend.
 
 ## Configuration
 
@@ -148,5 +148,7 @@ docker build -f backend/Dockerfile -t ubb-events-api .
 Use an orchestrator or `docker run` to attach the image to the existing Compose network and inject `ConnectionStrings__DefaultConnection` with **Host=postgres;Port=5432**, JWT settings, and CORS origins. The image runs as the non-root `app` user on port 8080. Publish behind a TLS-terminating reverse proxy, configure the public HTTPS port/forwarded-header handling for your trusted proxy, and use a secret manager. The host application's connection uses **127.0.0.1:5433**, not `postgres:5432`. Swagger and admin bootstrap are disabled outside Development. Run reviewed migrations as a separate deployment step. No production deployment or database update is performed by the application.
 
 ## Project evidence and scope
+
+See [Project structure](docs/Project-Structure.md) for the repository tree, backend/frontend responsibilities, configuration locations, tests, and guidance on where to make changes.
 
 The functional sources are the five supplied DOCX files in `docs/`. [Backend implementation notes](docs/Backend-Implementation.md) map requirements to services and tests and record decisions and GenAI usage. [Backend flows from HTTP to PostgreSQL](docs/Backend-Flows.md) trace each implemented operation through its controller, service, authorization checks, transaction, and database tables. This task does not implement frontend workflows, payments, notifications, a token-refresh/revocation system, a production administrator-provisioning interface, or a production hosting configuration. The team still owns human review, UX/user research, individual contribution declarations, and production operations.
