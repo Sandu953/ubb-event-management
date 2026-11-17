@@ -28,6 +28,8 @@ ubb-event-management/
 |-- .dockerignore
 |-- .env.example
 |-- docker-compose.yml
+|-- scripts/
+|   `-- seed-demo.ps1
 |-- .config/
 |   `-- dotnet-tools.json
 |-- .github/
@@ -56,6 +58,10 @@ ubb-event-management/
 |   |   |   `-- AuthorizationOperationFilter.cs
 |   |   |-- Data/
 |   |   |   |-- AppDbContext.cs
+|   |   |   |-- Seeding/
+|   |   |   |   |-- DemoDataCatalog.cs
+|   |   |   |   |-- DevelopmentDataSeeder.cs
+|   |   |   |   `-- DemoSeedCommand.cs
 |   |   |   `-- Migrations/
 |   |   |-- UbbEvents.Api.http
 |   |   `-- WeatherForecast.cs
@@ -67,6 +73,7 @@ ubb-event-management/
 |       |-- EventApiTests.cs
 |       |-- AuthAndOrganizationTests.cs
 |       |-- SecurityTests.cs
+|       |-- DevelopmentDataSeederTests.cs
 |       |-- RegistrationTests.cs
 |       |-- ConcurrencyTests.cs
 |       |-- AttendanceTests.cs
@@ -133,6 +140,7 @@ ubb-event-management/
 `-- docs/
     |-- Project-Structure.md
     |-- Backend-Flows.md
+    |-- Demo-Data-Seeding.md
     `-- Backend-Implementation.md
 ```
 
@@ -150,6 +158,7 @@ All API source is under `backend/UbbEvents.Api/`. The [project file](../backend/
 | [Services/](../backend/UbbEvents.Api/Services) | Business rules, permission checks, state transitions, transactions, registration/waitlist workflows, authentication, and attendance. See the service map below. |
 | [Repositories/EventLockRepository.cs](../backend/UbbEvents.Api/Repositories/EventLockRepository.cs) | Shared PostgreSQL event-row locking for existing-event writes. Most ordinary EF queries remain in their service; there is no generic repository framework. |
 | [Data/AppDbContext.cs](../backend/UbbEvents.Api/Data/AppDbContext.cs) | EF entity sets, relationships, enum conversions, keys, indexes, check constraints, and event-version concurrency mapping. |
+| [Data/Seeding/](../backend/UbbEvents.Api/Data/Seeding) | Development-only demo catalog, idempotent insertion, and one-shot `--seed-demo` CLI command; no schema changes or web endpoint. |
 | [Data/Migrations/](../backend/UbbEvents.Api/Data/Migrations) | Versioned schema changes, generated migration designer files, and `AppDbContextModelSnapshot.cs`. Preserve existing migrations; schema changes require additive migrations. |
 | [Infrastructure/ApiException.cs](../backend/UbbEvents.Api/Infrastructure/ApiException.cs) | Service validation helpers, HTTP-oriented exceptions, and conversion of application/database exceptions into safe ProblemDetails responses. |
 | [Infrastructure/AuthorizationOperationFilter.cs](../backend/UbbEvents.Api/Infrastructure/AuthorizationOperationFilter.cs) | Swagger security metadata for public and authenticated operations. |
@@ -248,6 +257,7 @@ This section identifies ownership of configuration files. Follow the READMEs for
 | [appsettings.json](../backend/UbbEvents.Api/appsettings.json) | Shared non-secret backend defaults: logging, JWT issuer/audience/lifetime, CORS origins, and bootstrap enabled flag. |
 | [appsettings.Development.json](../backend/UbbEvents.Api/appsettings.Development.json) | Environment-specific Development configuration overlay. |
 | .NET User Secrets, stored outside the repository | Local backend connection string, JWT signing key, and optional development-admin credentials. The API project declares its User Secrets ID. Environment variables can provide equivalent configuration using `__` between key segments. |
+| [scripts/seed-demo.ps1](../scripts/seed-demo.ps1) and private root `.env.demo-seed.local` | Explicit demo-data runner and generated demo-account password. The password file is ignored; it is loaded by this runner, not by ordinary API startup. |
 | [launchSettings.json](../backend/UbbEvents.Api/Properties/launchSettings.json) | Local API launch URLs and environment selection. |
 | [frontend/.env.example](../frontend/.env.example) → private `frontend/.env.local` | Frontend `VITE_API_URL`. Vite embeds frontend configuration during builds; `VITE_` values are browser-visible and must not contain secrets. |
 | [.config/dotnet-tools.json](../.config/dotnet-tools.json) | Repository-local EF CLI version used by `dotnet tool restore` / `dotnet ef`. |
@@ -282,6 +292,7 @@ Run .NET solution commands from the repository root and npm commands from `front
 | [Frontend README](../frontend/README.md) | Frontend setup, pages/permissions, session behavior, scripts, and deployment. |
 | [Project structure](Project-Structure.md) | This repository and responsibility map. |
 | [Backend flows](Backend-Flows.md) | Controller-to-service-to-database execution paths, locking, auditing, and errors. |
+| [Demo data seeding](Demo-Data-Seeding.md) | How to run the seeder, demo accounts/events, password handling, dry runs, and rerun behavior. |
 | [Backend implementation](Backend-Implementation.md) | Architecture decisions, requirement-to-test traceability, GenAI record, and historical validation evidence. |
 | [Frontend user flows](../frontend/docs/USER-FLOWS.md) | Role-specific journeys for guests, participants, organization staff, and administrators. |
 | [Frontend API integration](../frontend/docs/API-INTEGRATION.md) | Endpoint/DTO integration, permission assumptions, and frontend/backend gaps. |

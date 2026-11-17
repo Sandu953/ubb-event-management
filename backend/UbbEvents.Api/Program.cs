@@ -8,13 +8,17 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using UbbEvents.Api.Data;
+using UbbEvents.Api.Data.Seeding;
 using UbbEvents.Api.DTOs;
 using UbbEvents.Api.Infrastructure;
 using UbbEvents.Api.Models;
 using UbbEvents.Api.Repositories;
 using UbbEvents.Api.Services;
 
-var builder = WebApplication.CreateBuilder(args);
+var seedDemo = args.Contains("--seed-demo", StringComparer.Ordinal);
+var dryRun = seedDemo && args.Contains("--dry-run", StringComparer.Ordinal);
+var applicationArgs = seedDemo ? args.Where(x => x != "--seed-demo" && x != "--dry-run").ToArray() : args;
+var builder = WebApplication.CreateBuilder(applicationArgs);
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(allowIntegerValues: false));
@@ -73,6 +77,7 @@ builder.Services.AddScoped<EventService>();
 builder.Services.AddScoped<WaitlistService>();
 builder.Services.AddScoped<RegistrationService>();
 builder.Services.AddScoped<AttendanceService>();
+builder.Services.AddScoped<DevelopmentDataSeeder>();
 var origins = builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? ["http://localhost:5173"];
 builder.Services.AddCors(options => options.AddPolicy("Frontend", policy =>
     policy.WithOrigins(origins).AllowAnyHeader().AllowAnyMethod()));
@@ -106,6 +111,13 @@ builder.Services.AddSwaggerGen(options =>
     options.OperationFilter<AuthorizationOperationFilter>();
 });
 var app = builder.Build();
+if (seedDemo)
+{
+    // One-shot command: no web listener, startup admin bootstrap, JWT requirement, or automatic migrations.
+    Environment.ExitCode = await DemoSeedCommand.RunAsync(app, dryRun);
+    await app.DisposeAsync();
+    return;
+}
 app.UseExceptionHandler();
 app.UseStatusCodePages(async context =>
 {

@@ -1074,7 +1074,7 @@ main#main-content {
 .toolbar {
   display: flex;
   gap: 20px;
-  align-items: end;
+  align-items: center;
   flex-wrap: wrap;
 }
 .toolbar > .field,
