@@ -35,7 +35,7 @@ dotnet ef database update --project backend/UbbEvents.Api --startup-project back
 dotnet run --project backend/UbbEvents.Api --launch-profile http
 ```
 
-The checked-in HTTP profile uses **http://localhost:5088**; Swagger is at **http://localhost:5088/swagger** in Development. `/api/health` retains the existing liveness response `{ "status": "ok" }`; it is not a database readiness check. The frontend's existing fallback is port 5000: set `VITE_API_URL=http://localhost:5088` in its untracked local environment, or run the API with `--no-launch-profile --urls http://localhost:5000` and `ASPNETCORE_ENVIRONMENT=Development`. Frontend source and Compose services are unchanged.
+The checked-in HTTP profile uses **http://localhost:5088**; Swagger is at **http://localhost:5088/swagger** in Development. `/api/health` retains the existing liveness response `{ "status": "ok" }`; it is not a database readiness check. The frontend's current API fallback and `.env.example` also use port 5088. If you run the API on another port, set `VITE_API_URL` in the frontend's untracked `.env.local` to match and restart Vite or rebuild the frontend.
 
 ## Configuration
 
@@ -53,10 +53,22 @@ Environment variables use double underscores in place of colons. No signing keys
 | `DevelopmentAdmin:Email` | `DevelopmentAdmin__Email` | Required if bootstrap enabled |
 | `DevelopmentAdmin:Password` | `DevelopmentAdmin__Password` | Required if bootstrap enabled; 12–128 characters |
 | `DevelopmentAdmin:FullName` | `DevelopmentAdmin__FullName` | `Development Administrator` |
+| `DemoSeed:Password` | `DemoSeed__Password` | 12-128 characters; only required for the explicit demo seed command; runner generates a private local value |
 
 Startup validates JWT configuration and fails if it is missing or unsafe. Startup **never applies database migrations**. Apply migrations before enabling the bootstrap.
 
 For a local global administrator, set the three `DevelopmentAdmin` secrets (`Enabled=true`, a private email, and a private password), then launch in Development. Seeding is transactional and idempotent, never changes an existing account's password or elevates a student account, and refuses to run outside Development. Disable it and remove the password secret after onboarding. There is no administrator-creation API. Production administrator provisioning is an operator responsibility through a controlled deployment process.
+
+## Development demo data
+
+To populate a migrated development database with users, a global administrator, organization admins/organizers, two organizations, all event states, registration/waitlist history, attendance, and audits, run from the repository root:
+
+```powershell
+.\scripts\seed-demo.ps1 -DryRun
+.\scripts\seed-demo.ps1
+```
+
+The runner generates a demo-account password in the ignored `.env.demo-seed.local` file on the first real run. All newly created demo users use that password; start with `global.admin@demo.ubbevents.test` or `student.one@demo.ubbevents.test`. Existing account passwords and event/registration changes are preserved on reruns. The command requires Development, refuses pending migrations, and exits without starting another API listener. See [Demo data seeding](docs/Demo-Data-Seeding.md) for all accounts/events, safety rules, and direct .NET commands.
 
 ## API and authentication
 
@@ -148,5 +160,9 @@ docker build -f backend/Dockerfile -t ubb-events-api .
 Use an orchestrator or `docker run` to attach the image to the existing Compose network and inject `ConnectionStrings__DefaultConnection` with **Host=postgres;Port=5432**, JWT settings, and CORS origins. The image runs as the non-root `app` user on port 8080. Publish behind a TLS-terminating reverse proxy, configure the public HTTPS port/forwarded-header handling for your trusted proxy, and use a secret manager. The host application's connection uses **127.0.0.1:5433**, not `postgres:5432`. Swagger and admin bootstrap are disabled outside Development. Run reviewed migrations as a separate deployment step. No production deployment or database update is performed by the application.
 
 ## Project evidence and scope
+
+See [Project structure](docs/Project-Structure.md) for the repository tree, backend/frontend responsibilities, configuration locations, tests, and guidance on where to make changes.
+
+See [Demo data seeding](docs/Demo-Data-Seeding.md) for the runnable development dataset and role-specific sample accounts.
 
 The functional sources are the five supplied DOCX files in `docs/`. [Backend implementation notes](docs/Backend-Implementation.md) map requirements to services and tests and record decisions and GenAI usage. [Backend flows from HTTP to PostgreSQL](docs/Backend-Flows.md) trace each implemented operation through its controller, service, authorization checks, transaction, and database tables. This task does not implement frontend workflows, payments, notifications, a token-refresh/revocation system, a production administrator-provisioning interface, or a production hosting configuration. The team still owns human review, UX/user research, individual contribution declarations, and production operations.

@@ -396,6 +396,10 @@ When `DevelopmentAdmin:Enabled` is false, return immediately. When enabled, requ
 
 Startup does not apply migrations. Schema updates use reviewed `dotnet ef` migration commands before starting the application or enabling bootstrap.
 
+### Explicit demo-data command
+
+`dotnet run --project backend/UbbEvents.Api --configuration Release --launch-profile http -- --seed-demo` takes a separate path: `Program.cs` → `DemoSeedCommand.RunAsync` → `DevelopmentDataSeeder.SeedAsync` → `AppDbContext` → PostgreSQL. It is not an HTTP endpoint. The command requires Development, validates migrations and reserved identities, acquires the bootstrap advisory lock inside a transaction, and adds missing demo data and audits. Existing events and their registrations remain untouched. `--dry-run` reports the target/counts without writing. The command exits before normal web-host startup and therefore does not require a JWT signing key or run the automatic admin bootstrap. See [Demo data seeding](Demo-Data-Seeding.md) for the PowerShell runner, credentials, and dataset.
+
 ### Health endpoint
 
 `GET /api/health` is a minimal endpoint in `Program.cs`, not a controller action. It returns `200 HealthResponse` as `{ "status": "ok" }` without a service or database query. It checks application liveness, not database connectivity/readiness.
